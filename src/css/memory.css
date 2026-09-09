@@ -1,0 +1,76 @@
+#memory {
+  --gap: 0.5vmin;
+  --size: 21vmin;
+  --edge: calc(var(--size) / 10);
+  --square: calc(4 * (var(--size) + 2 * var(--gap)));
+
+  .score {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+
+    & p {
+      margin: 0 1em;
+      color: #888;
+
+      &.current {
+        color: #fff;
+      }
+    }
+
+    & span {
+      margin-left: 1em;
+    }
+  }
+
+  .layout {
+    display: flex;
+    flex-wrap: wrap;
+    width: var(--square);
+
+    div {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: var(--size);
+      height: var(--size);
+      margin: var(--gap);
+      color: #333;
+      background-color: #000;
+      border-radius: var(--edge);
+      overflow: hidden;
+      cursor: pointer;
+
+      &:has(p) {
+        border: 1px outset #888;
+        box-sizing: border-box;
+      }
+
+      &:has(img.show-found),
+      &:has(img.found) {
+        cursor: default
+      }
+
+
+        &:has(.show-found) {
+          border: 1px inset white;
+          box-sizing: border-box;
+        }
+
+      p:hover {
+        color: #fff;
+      }
+
+      img {
+        width: var(--size);
+        height: var(--size);
+        object-fit: contain;
+        margin: 0;
+
+        &.found {
+          opacity: 0.25;
+        }
+      }
+    }
+  }
+}

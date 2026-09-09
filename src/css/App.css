@@ -1,0 +1,210 @@
+/**
+ * frontend/src/App.css
+ */
+
+:root {
+  --light: #ddd;
+  --gray: #888;
+  --dark: #222;
+  --gap: 0.5em;
+  --width: 10em;
+
+  --primary: #060;
+  --primary-border: #393;
+  --primary-active: #030;
+  --disabled: #333;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--light);
+  background-color: var(--dark);
+}
+
+body,
+main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+h1 {
+  font-size: 2.25em;
+}
+
+img {
+  display: block;
+  max-width: 256px;
+  margin-bottom: 2em;
+}
+
+button {
+  color: inherit;
+  font-size: inherit;
+  background-color: var(--primary);
+  border: 1px outset var(--primary-border);
+  border-radius: var(--gap);
+  width: var(--width);
+  padding: var(--gap);
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: var(--primary-active);
+  color: #fff;
+}
+
+button:hover:active{
+  border-style: inset;
+  background-color: #000;
+}
+
+button:disabled {
+  cursor: default;
+  pointer-events: none;
+  background-color: var(--disabled);
+  border-color: var(--disabled);
+  color: var(--gray);
+}
+
+pre {
+border: 1px inset #888;
+width: fit-content;
+min-width: 25em;
+min-height: 8em;
+overflow: auto;
+}
+
+a {
+  color: inherit;
+  font-family: inherit;
+  display: block;
+  width: var(--width);
+  padding: var(--gap) 0;
+  text-align: center;
+  text-decoration: none;
+  border: 1px outset #888;
+  border-radius: 0.5em;
+  user-select: none;
+
+  &:hover {
+    color: #99f;
+  }
+
+  &:hover:active {
+    border-style: inset;
+    background-color: #000;
+  }
+}
+
+form {
+  margin: 1em 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px #fff inset;
+  background-color: #000;
+  padding: 0 1em;
+
+  label {
+    display: flex;
+    justify-content: space-around;
+
+    span {
+      display: inline-block;
+      width: 4em;
+    }
+  }
+
+  button {
+    width: 100%;
+    margin: 1em 0;
+  }
+}
+
+#log-in {
+  margin-bottom: 2em;
+  text-align: center;
+
+  & label {
+    display: block;
+    margin-bottom: 1em;
+
+    & span {
+      margin-right: 0.5em;
+    }
+  }
+}
+
+#chat {
+  margin-bottom: 1em;
+
+  & .messages{
+    list-style-type: none;
+    padding: 0;
+    width: 100%;
+    --small: 0.75em;
+    --smaller: 0.5em;
+    --right: 0em;
+    --bottom: 0em;
+
+
+    & li {
+      position: relative;
+      margin-bottom: 0.25em;
+      background-color: #444;
+      border: 1px solid #444;
+      border-radius: 0.25em;
+
+
+      & p.sender {
+        display: flex;
+        justify-content: space-between;
+        background-color: #060;
+        padding: 0.0625em 0.5em;
+        border-radius: 0.25em;
+        margin: 0;
+
+        & span.time {
+          font-size: var(--small);
+          padding-top: 0.25em;
+        }
+      }
+
+      p.message {
+        margin: 0.5em;
+      }
+
+      &.acknowledged {
+        &::after {
+          content: " ☑️";
+          position: absolute;
+          right: var(--right);
+          bottom: var(--bottom);
+          font-size: var(--small);
+        }
+
+        &.some::after {
+          content: " ☑️☑️";
+        }
+
+        &.all::after {
+          content: " ✅✅";
+        }
+      }
+    }
+  }
+  & label {
+    display: flex;
+    align-items: center;
+
+    & span {
+      margin-right: 0.5em;
+
+      &::after {
+        content: ":"
+      }
+    }
+  }
+}

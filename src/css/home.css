@@ -1,0 +1,23 @@
+#home {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  h1 {
+    width: 100%;
+    text-align: center;
+  }
+  
+  span {
+    margin-top: 1em;
+    margin-right: 0.5em;
+  }
+
+  input {
+  }
+
+  button {
+    margin-top: 1em;
+    width: 100%;
+  }
+}
