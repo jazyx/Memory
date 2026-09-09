@@ -1,5 +1,5 @@
 #frame {
-  --tabsSize: 1.5em;
+  --tabsSize: 2em;
   --mainSize: calc(100vh - var(--tabsSize));
   display: flex;
   flex-direction: column;
@@ -8,13 +8,7 @@
 
   #tabs {
     height: var(--tabsSize);
-
-    & h4 {
-      margin: 0;
-      text-align: center;
-      color: #666;
-      font-weight: normal;
-    }
+    text-align: center;
   }
 
   #main {

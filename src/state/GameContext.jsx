@@ -5,14 +5,42 @@
  */
 
 
-import React, { createContext, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect
+} from 'react'
+import { WSContext } from './WSContext'
 
 
 export const GameContext = createContext()
 
 
 export const GameProvider = ({ children }) => {
+  const { treatMessageListener } = useContext(WSContext)
   const [ json, setJSON ] = useState({})
+
+
+  const newGame = ({game_object}) => {
+    setJSON(game_object)
+  }
+
+
+  const listenForNewGame = () => {
+    treatMessageListener(
+      "add",
+      [
+        { subject: "NEW_GAME",
+          callback: newGame
+        }
+      ]
+    )
+  }
+
+
+  useEffect(listenForNewGame, [])
+
 
   return (
     <GameContext.Provider

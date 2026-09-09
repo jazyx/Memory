@@ -7,6 +7,7 @@
   --gray: #888;
   --dark: #222;
   --gap: 0.5em;
+  --slot: 0.25em;
   --width: 10em;
 
   --primary: #060;
@@ -42,12 +43,12 @@ img {
 
 button {
   color: inherit;
-  font-size: inherit;
+  /* font-size: inherit; */
   background-color: var(--primary);
   border: 1px outset var(--primary-border);
   border-radius: var(--gap);
   width: var(--width);
-  padding: var(--gap);
+  padding: var(--slot);
   cursor: pointer;
 }
 
@@ -120,91 +121,5 @@ form {
   button {
     width: 100%;
     margin: 1em 0;
-  }
-}
-
-#log-in {
-  margin-bottom: 2em;
-  text-align: center;
-
-  & label {
-    display: block;
-    margin-bottom: 1em;
-
-    & span {
-      margin-right: 0.5em;
-    }
-  }
-}
-
-#chat {
-  margin-bottom: 1em;
-
-  & .messages{
-    list-style-type: none;
-    padding: 0;
-    width: 100%;
-    --small: 0.75em;
-    --smaller: 0.5em;
-    --right: 0em;
-    --bottom: 0em;
-
-
-    & li {
-      position: relative;
-      margin-bottom: 0.25em;
-      background-color: #444;
-      border: 1px solid #444;
-      border-radius: 0.25em;
-
-
-      & p.sender {
-        display: flex;
-        justify-content: space-between;
-        background-color: #060;
-        padding: 0.0625em 0.5em;
-        border-radius: 0.25em;
-        margin: 0;
-
-        & span.time {
-          font-size: var(--small);
-          padding-top: 0.25em;
-        }
-      }
-
-      p.message {
-        margin: 0.5em;
-      }
-
-      &.acknowledged {
-        &::after {
-          content: " ☑️";
-          position: absolute;
-          right: var(--right);
-          bottom: var(--bottom);
-          font-size: var(--small);
-        }
-
-        &.some::after {
-          content: " ☑️☑️";
-        }
-
-        &.all::after {
-          content: " ✅✅";
-        }
-      }
-    }
-  }
-  & label {
-    display: flex;
-    align-items: center;
-
-    & span {
-      margin-right: 0.5em;
-
-      &::after {
-        content: ":"
-      }
-    }
   }
 }

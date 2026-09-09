@@ -5,6 +5,7 @@
 
 import { useState, useRef, useEffect, useContext } from 'react'
 import { WSContext } from '../state/WSContext'
+import { GameContext } from '../state/GameContext'
 
 
 export default function LogIn({ name }) {
@@ -13,6 +14,7 @@ export default function LogIn({ name }) {
     socketIsOpen,
     trackMessage
   } = useContext(WSContext)
+  const { setJSON } = useContext(GameContext)
 
   const [ userName, setUserName ] = useState(name || user_name)
   
@@ -46,6 +48,7 @@ export default function LogIn({ name }) {
 
   const setGameObject = ({ game_object }) => {
     console.log("game_object:", game_object)
+    setJSON(game_object)
   }
 
 
