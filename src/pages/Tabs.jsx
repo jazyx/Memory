@@ -9,9 +9,8 @@ import { GameContext } from '../state/GameContext'
 
 
 export default function Tabs() {
-  const { sendMessage } = useContext(WSContext)
-  const { setJSON } = useContext(GameContext)
-
+  const { sendMessage, user_name } = useContext(WSContext)
+  const { json, role } = useContext(GameContext)
 
 
   const newGame = () => {
@@ -23,13 +22,18 @@ export default function Tabs() {
   }
 
 
-  return (
-    <div id="tabs">
-      <button
+  const display = (role)
+    ? <button
         onClick={newGame}
       >
         New Game
       </button>
+    : <p>{json.game}</p>
+
+
+  return (
+    <div id="tabs">
+      {display}
     </div>
   )
 }

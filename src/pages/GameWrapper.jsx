@@ -14,6 +14,7 @@ import { useState, useEffect, useContext } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { WSContext } from '../state/WSContext'
+import { GameContext } from '../state/GameContext'
 import Throbber from '../components/Throbber'
 import LogIn from './LogIn'
 import Memory from './Memory'
@@ -21,7 +22,9 @@ import Memory from './Memory'
 
 
 export default function GameWrapper() {
-  const { name } = useParams()
+  // HACK to set role = "teacher" if name param has format
+  // someName—teacher
+  const { name: label } = useParams()
 
   const [ Activity, setActivity ] = useState(() => Throbber)
   
@@ -29,11 +32,12 @@ export default function GameWrapper() {
     userId,
     user_name,
   } = useContext(WSContext)
+  const { setRole } = useContext(GameContext)
 
 
-  // console.log("name:", name)
-  // console.log("user_name:", user_name)
-
+  const params = label.split("+")
+  const [name, teacher] = params
+  const role = teacher === "teacher" ? "teacher" : ""
 
 
   const loadActivity = () => {
@@ -47,12 +51,18 @@ export default function GameWrapper() {
   }
 
 
+  const updateRole = () => {
+    setRole(role)
+  }
+
+
   useEffect(loadActivity, [userId, user_name])
+  useEffect(updateRole, [role])
 
 
   return (
     <div id="main">
-      <Activity name={name} />
+      <Activity name={name} role={role}/>
     </div>
   )
 }

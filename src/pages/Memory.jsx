@@ -14,6 +14,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { WSContext } from '../state/WSContext'
 import { GameContext } from '../state/GameContext'
+import Settings from '../components/Settings'
 import { toneColor } from '../utilities/colors'
 import '../css/memory.css'
 
@@ -21,7 +22,7 @@ import '../css/memory.css'
 const FOUND_DELAY = 1000
 
 
-export default function Memory() {
+export default function Memory({ role }) {
   const {
     user_name,
     sendMessage
@@ -30,18 +31,10 @@ export default function Memory() {
 
   const [ cards, setCards ] = useState([])
   const [ players, setPlayers ] = useState([])
-  // const [ player, setPlayer ] = useState()
-  const [ playerCount, setPlayerCount ] = useState(0)
   const [ toFind, setToFind ] = useState(json.to_find || 999)
 
   const [ flippedCards, setFlippedCards ] = useState([])
-
-
-  // console.log("player:", player, ", json.player:", json.player)
-
-
-  // const [ turnOver, setTurnOver ] = useState(false)
-  // const [ toFind, setToFind ] = useState(cards.length / 2)
+  const [ settings, setSettings ] = useState()
 
 
   const flipCard = ({ target }) => {
@@ -53,6 +46,8 @@ export default function Memory() {
 
     target = target.closest("div") // target may initially be img
     const index = Number(target.dataset.index)
+
+    if (cards[index].found) { return }
 
     switch (flippedCards.length) {
       case 0:
@@ -85,48 +80,6 @@ export default function Memory() {
       player: user_name
     }
     sendMessage(message)
-
-    // Handle second flip: match or next player?
-    if (flipped.length === 2) {
-      if ( cards[flipped[0]].image
-       === cards[flipped[1]].image) {
-        showFound(flipped)
-      }
-
-      // setTurnOver(true)
-    }
-  }
-
-
-  const showFound = flipped => {
-    cards[flipped[0]].found =
-      cards[flipped[1]].found =
-      "_found_"
-  }
-
-
-  const pairFound = () => {
-    cards[flippedCards[0]].turned =
-      cards[flippedCards[1]].turned =
-      false
-
-    cards[flippedCards[0]].found =
-      cards[flippedCards[1]].found =
-      players[json.player].name
-
-    players[json.player].score += 1
-    setToFind(toFind - 1)
-
-    setFlippedCards([])
-  }
-
-
-  const allFound = () => {
-    console.log("still to find:", toFind)
-    if (!toFind) {
-      cards.forEach(card => card.turned = true)
-      setToFind(99)
-    }
   }
 
 
@@ -200,8 +153,6 @@ export default function Memory() {
       highlight = data.score === highScore
     }
 
-    console.log("name, highlight:", name, highlight)
-
     if (highlight) {
       color = `#${toneColor(color, 2.)}`
     }
@@ -213,25 +164,55 @@ export default function Memory() {
     const style = {
       color
     }
+
+    const settingsClass = (settings === name)
+      ? "settings"
+      : "settings hide"
+
     return (
-      <p
+      <div className="player"
         key={`${name}`}
-        className={className}
-        style={style}
       >
-        {name}:
-        <span>{score}</span>
-      </p>
+        <p
+          className={className}
+          style={style}
+          onClick={showSettings}
+        >
+          {name}:
+          <span>{score}</span>
+        </p>
+
+        { role === "teacher" &&
+          <Settings
+            name={name}
+            className={settingsClass}
+            close={setSettings}
+            peek={name === user_name || playerCanPeek(name)}
+          />
+        }
+      </div>
     )
+
+
+    function playerCanPeek(name) {
+      const playerData = players.find(data => data.name === name)
+      return !!(playerData && playerData.peek)
+    }
+
+
+    function showSettings() {
+      if (settings === name) {
+        return setSettings()
+      }
+      setSettings(name)
+    }
   })
 
 
   const startGame = () => {
     if (json.players) {
       setPlayers(json.players)
-      setPlayerCount(json.players.length)
       setCards(json.cards)
-      // setPlayer(0)
     }
   }
 
@@ -252,7 +233,6 @@ export default function Memory() {
 
     setCards(cards)
     setPlayers(players)
-    setPlayerCount(players.length)
     setToFind(to_find)
 
     const custom = (players[json.player].name === user_name)
@@ -267,12 +247,20 @@ export default function Memory() {
   useEffect(gameUpdate, [json])
 
 
+  const data = players.find(data => data.name === user_name) || {}
+  const canPeek = role === "teacher" || data.peek
+  const layoutClass = `layout${canPeek
+    ? " peek"
+    : ""
+  }`
+
+
   return (
     <div
       id="memory"
     >
       <div className="score">{score}</div>
-      <div className="layout">{layout}</div>
+      <div className={layoutClass}>{layout}</div>
     </div>
   )
 }

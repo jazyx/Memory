@@ -25,7 +25,11 @@ function App() {
               element={<GameWrapper />}
             />
             <Route
-              path="/:name"
+              path="/:memory/:name/"
+              element={<GameWrapper />}
+            />
+            <Route
+              path="/:memory"
               element={<GameWrapper />}
             />
           </Route>

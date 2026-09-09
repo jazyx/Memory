@@ -21,7 +21,6 @@
 
     & p {
       margin: 0 1em;
-      color: #888;
 
       &.current {
         color: #fff;
@@ -30,6 +29,38 @@
 
     & span {
       margin-left: 1em;
+    }
+  }
+
+  .player {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: default;
+
+    &:has(.settings) {
+      cursor: pointer;
+      pointer-events: all;
+    }
+  }
+
+  .settings {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    top: 1.25em;
+    z-index: 1;
+
+    &.hide {
+      display: none
+    }
+
+    & button {
+      width: 100%;
+      padding: 0.25em 0.5em;
+      border-radius: 0.5em;
     }
   }
 
@@ -82,18 +113,27 @@
         box-sizing: border-box;
       }
 
-      p:hover {
-        color: var(--cheat);
-      }
-
       img {
         width: var(--size);
         height: var(--size);
         object-fit: contain;
         margin: 0;
+        color: #fff;
+        line-height: 5em;
+        text-align: center;
 
         &.found {
           opacity: 0.25;
+        }
+      }
+    }
+
+    &.peek {
+      p {
+        pointer-events: all;
+
+        &:hover {
+          color: var(--cheat);
         }
       }
     }

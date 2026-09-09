@@ -20,6 +20,8 @@ export const GameContext = createContext()
 export const GameProvider = ({ children }) => {
   const { treatMessageListener } = useContext(WSContext)
   const [ json, setJSON ] = useState({})
+  const [ role, setRole ] = useState()
+  
 
 
   const setGameObject = ({game_object}) => {
@@ -47,7 +49,9 @@ export const GameProvider = ({ children }) => {
     <GameContext.Provider
       value ={{
         json,
-        setJSON
+        setJSON,
+        role,
+        setRole
       }}
     >
       {children}

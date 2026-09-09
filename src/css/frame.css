@@ -9,6 +9,12 @@
   #tabs {
     height: var(--tabsSize);
     text-align: center;
+
+    & p {
+      text-decoration: underline;
+      margin: 0.25em 0 0;
+      font-size: 1.5em;
+    }
   }
 
   #main {
