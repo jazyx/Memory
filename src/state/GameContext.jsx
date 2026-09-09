@@ -22,8 +22,9 @@ export const GameProvider = ({ children }) => {
   const [ json, setJSON ] = useState({})
 
 
-  const newGame = ({game_object}) => {
+  const setGameObject = ({game_object}) => {
     setJSON(game_object)
+    // console.log("game_object", JSON.stringify(game_object, null, '  '));
   }
 
 
@@ -31,8 +32,8 @@ export const GameProvider = ({ children }) => {
     treatMessageListener(
       "add",
       [
-        { subject: "NEW_GAME",
-          callback: newGame
+        { subject: "GAME_OBJECT",
+          callback: setGameObject
         }
       ]
     )

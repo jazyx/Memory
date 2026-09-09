@@ -12,7 +12,7 @@ export default function LogIn({ name }) {
   const {
     user_name,
     socketIsOpen,
-    trackMessage
+    sendMessage
   } = useContext(WSContext)
   const { setJSON } = useContext(GameContext)
 
@@ -38,17 +38,11 @@ export default function LogIn({ name }) {
       user_name: userName
     }
 
-    trackMessage(message, setGameObject)
+    sendMessage(message)
     // First reply has subject LOGGED_IN, so user_name will be
     // set in WSContext
 
-    // Second reply will be handled by setGameObject
-  }
-
-
-  const setGameObject = ({ game_object }) => {
-    console.log("game_object:", game_object)
-    setJSON(game_object)
+    // Second reply will be handled by GameContext
   }
 
 

@@ -4,7 +4,7 @@
 
 :root {
   --light: #ddd;
-  --gray: #888;
+  --grey: #888;
   --dark: #222;
   --gap: 0.5em;
   --slot: 0.25em;
@@ -67,7 +67,7 @@ button:disabled {
   pointer-events: none;
   background-color: var(--disabled);
   border-color: var(--disabled);
-  color: var(--gray);
+  color: var(--grey);
 }
 
 pre {

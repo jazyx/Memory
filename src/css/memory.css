@@ -4,11 +4,12 @@
 }
 
 #memory {
-  --gap: 0.5vmin;
-  --size: 21vmin;
+  --gap: 0.25vmin;
+  --size: 17.5vmin;
   --edge: calc(var(--size) / 10);
-  --square: calc(4 * (var(--size) + 2 * var(--gap)));
-  --dim: #933;
+  --square: calc(5 * (var(--size) + 2 * var(--gap)));
+  --dim: #000;
+  --cheat: #666;
 
   pointer-events: var(--events);
 
@@ -36,8 +37,10 @@
     display: flex;
     flex-wrap: wrap;
     width: var(--square);
+    counter-set: card;
 
     div {
+      position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -45,14 +48,28 @@
       height: var(--size);
       margin: var(--gap);
       color: var(--dim);
-      background-color: #000;
+      background-color: var(--dim);
       border-radius: var(--edge);
       overflow: hidden;
       cursor: pointer;
+      counter-increment: card;
+
+      &::after {
+        content: counter(card);
+        color: #fff;
+        position: absolute;
+        top: 0.5em;
+        left: 0.5em;
+        text-shadow: 0 0 4px black
+      }
 
       &:has(p) {
         border: 1px outset #888;
         box-sizing: border-box;
+
+        &::after {
+          color: #aaa
+        }
       }
 
       &:has(img.show-found),
@@ -66,7 +83,7 @@
       }
 
       p:hover {
-        color: #fff;
+        color: var(--cheat);
       }
 
       img {

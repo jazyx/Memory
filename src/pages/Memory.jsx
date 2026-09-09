@@ -14,6 +14,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { WSContext } from '../state/WSContext'
 import { GameContext } from '../state/GameContext'
+import { toneColor } from '../utilities/colors'
 import '../css/memory.css'
 
 
@@ -21,21 +22,34 @@ const FOUND_DELAY = 1000
 
 
 export default function Memory() {
-  const { user_name } = useContext(WSContext)
+  const {
+    user_name,
+    sendMessage
+  } = useContext(WSContext)
   const { json } = useContext(GameContext) // initially {}
 
   const [ cards, setCards ] = useState([])
   const [ players, setPlayers ] = useState([])
-  const [ flippedCards, setFlippedCards ] = useState([])
-  const [ player, setPlayer ] = useState()
+  // const [ player, setPlayer ] = useState()
   const [ playerCount, setPlayerCount ] = useState(0)
+  const [ toFind, setToFind ] = useState(json.to_find || 999)
 
-  const [ turnOver, setTurnOver ] = useState(false)
-  const [ toFind, setToFind ] = useState(cards.length / 2)
+  const [ flippedCards, setFlippedCards ] = useState([])
+
+
+  // console.log("player:", player, ", json.player:", json.player)
+
+
+  // const [ turnOver, setTurnOver ] = useState(false)
+  // const [ toFind, setToFind ] = useState(cards.length / 2)
 
 
   const flipCard = ({ target }) => {
-    if (players[player].name !== user_name) { return }
+    if (players[json.player].name !== user_name) {
+      // It's not this player's turn. `pointer-actions: none`
+      // should already have prevented the click
+      return
+    }
 
     target = target.closest("div") // target may initially be img
     const index = Number(target.dataset.index)
@@ -50,6 +64,7 @@ export default function Memory() {
         return
     }
 
+    // Handle the change locally
     cards[index].turned = true
   }
 
@@ -59,24 +74,33 @@ export default function Memory() {
       return
     }
 
-    const flippedNow = [...flippedCards]
-    flippedNow.push(index)
-    setFlippedCards(flippedCards => flippedNow)
+    // Update flippedCards locally before backend confirms
+    const flipped = [...flippedCards]
+    flipped.push(index)
+    setFlippedCards(() => flipped)
 
-    if (flippedNow.length === 2) {
-      if ( cards[flippedNow[0]].image
-       === cards[flippedNow[1]].image) {
-        showFound(flippedNow)
+    const message = {
+      subject: "FLIP_CARD",
+      flipped,
+      player: user_name
+    }
+    sendMessage(message)
+
+    // Handle second flip: match or next player?
+    if (flipped.length === 2) {
+      if ( cards[flipped[0]].image
+       === cards[flipped[1]].image) {
+        showFound(flipped)
       }
 
-      setTurnOver(true)
+      // setTurnOver(true)
     }
   }
 
 
-  const showFound = flippedNow => {
-    cards[flippedNow[0]].found =
-      cards[flippedNow[1]].found =
+  const showFound = flipped => {
+    cards[flipped[0]].found =
+      cards[flipped[1]].found =
       "_found_"
   }
 
@@ -88,20 +112,11 @@ export default function Memory() {
 
     cards[flippedCards[0]].found =
       cards[flippedCards[1]].found =
-      players[player].name
+      players[json.player].name
 
-    players[player].score += 1
+    players[json.player].score += 1
     setToFind(toFind - 1)
 
-    setFlippedCards([])
-  }
-
-
-  const nextPlayer = () => {
-    setPlayer((player + 1) % playerCount)
-    cards[flippedCards[0]].turned =
-      cards[flippedCards[1]].turned =
-      false
     setFlippedCards([])
   }
 
@@ -120,43 +135,89 @@ export default function Memory() {
                     .replace(/\..+$/, "")
     const key = `${index}_${name}`
 
-    const foundClass = (found === "_found_" || (turned && found))
+    const foundClass = ((!toFind && found))
       ? "show-found"
       : "found"
+
+    const style = toFind
+      ? {}
+      : playerColor(found)
 
     return (
       <div
         onClick={flipCard}
         data-index={index}
         key={key}
+        style={style}
       >
         { found
           ? <img
               src={image}
-              alt=""
+              alt={name}
               className={foundClass}
             />
           : turned
             ?
               <img
                 src={image}
-                alt=""
+                alt={name}
               />
             : <p>{`${name}`}</p>
         }
       </div>
     )
+
+
+    function playerColor(player) {
+      const playerData = players.find(data => data.name === player)
+      return {
+        border: `4px inset ${playerData.color}`,
+        boxSizing: "border-box"
+      }
+    }
   })
 
 
-  const score = players.map(({name, score}, index) => {
-    const className = index === player
+  const getHighScore = () => {
+    const scores = players.map(({score}) => score)
+    return Math.max.apply(null, scores)
+  }
+
+
+  const getPlayerData = name => (
+    players.find(data => data.name === name)
+  )
+
+
+  const score = players.map(({name, score, color}, index) => {
+    let highlight
+    if (toFind){
+      highlight = index === json.player
+
+    } else {
+      const highScore = getHighScore()
+      const data = getPlayerData(name)
+      highlight = data.score === highScore
+    }
+
+    console.log("name, highlight:", name, highlight)
+
+    if (highlight) {
+      color = `#${toneColor(color, 2.)}`
+    }
+
+    const className = highlight
       ? "current"
       : null
+
+    const style = {
+      color
+    }
     return (
       <p
         key={`${name}`}
         className={className}
+        style={style}
       >
         {name}:
         <span>{score}</span>
@@ -165,36 +226,36 @@ export default function Memory() {
   })
 
 
-  const nextTurn = () => {
-    if (!turnOver) {
-      return
-    }
-
-    if ( cards[flippedCards[0]].image
-      === cards[flippedCards[1]].image) {
-      setTimeout(pairFound, FOUND_DELAY)
-    } else {
-      setTimeout(nextPlayer, FOUND_DELAY)
-    }
-
-    setTurnOver(false)
-  }
-
-
   const startGame = () => {
     if (json.players) {
       setPlayers(json.players)
       setPlayerCount(json.players.length)
       setCards(json.cards)
-      setPlayer(0)
+      // setPlayer(0)
     }
   }
 
 
-  const enablePlayer = () => {
+  const gameUpdate = () => {
+    const {
+      cards,
+      players=[],
+      to_find,
+      turn_over
+    } = json
+
     if (!players.length) { return }
 
-    const custom = (players[player].name === user_name)
+    if (turn_over) {
+      setFlippedCards([])
+    }
+
+    setCards(cards)
+    setPlayers(players)
+    setPlayerCount(players.length)
+    setToFind(to_find)
+
+    const custom = (players[json.player].name === user_name)
       ? "all"
       : "none"
 
@@ -203,9 +264,7 @@ export default function Memory() {
 
 
   useEffect(startGame, [json.players])
-  useEffect(nextTurn, [turnOver])
-  useEffect(allFound, [toFind])
-  useEffect(enablePlayer, [player])
+  useEffect(gameUpdate, [json])
 
 
   return (
