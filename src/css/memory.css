@@ -8,6 +8,7 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;
+    width: var(--square);
 
     & p {
       margin: 0 1em;
@@ -51,11 +52,10 @@
         cursor: default
       }
 
-
-        &:has(.show-found) {
-          border: 1px inset white;
-          box-sizing: border-box;
-        }
+      &:has(.show-found) {
+        border: 1px inset white;
+        box-sizing: border-box;
+      }
 
       p:hover {
         color: #fff;

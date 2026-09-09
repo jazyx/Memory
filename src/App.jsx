@@ -8,11 +8,10 @@ import {
   Route
 } from 'react-router-dom'
 import './css/App.css'
-import Home from './pages/Home'
-import Memory from './pages/Memory'
-import { Page1 } from './pages/Archive/Page1'
-import { NotFound } from './pages/Archive/NotFound'
-import { Provider } from './logic'
+import Frame from './pages/Frame'
+import GameWrapper from './pages/GameWrapper'
+import NotFound from './pages/NotFound'
+import { Provider } from './state'
 
 
 function App() {
@@ -20,9 +19,16 @@ function App() {
     <Router>
       <Provider>
         <Routes>
-          <Route index element={<Home />} />
-          <Route path="/memory"   element={<Memory />} />
-          <Route path="/page1"   element={<Page1 />} />
+          <Route path="/" element={<Frame />}>
+            <Route
+              index
+              element={<GameWrapper />}
+            />
+            <Route
+              path="/:name"
+              element={<GameWrapper />}
+            />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Provider>

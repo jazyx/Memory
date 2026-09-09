@@ -4,7 +4,7 @@
 
 
 import React, { useState, useContext } from 'react'
-import { APIContext } from '../logic/APIContext'
+import { APIContext } from '../state/APIContext'
 const TAG_REGEX = /(<.*?>)|(<\/.*?>)/g
 
 

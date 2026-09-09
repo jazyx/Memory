@@ -10,7 +10,7 @@
  * ensure that registerConnectionCallback() is called before the
  * socket is opened (and to ensure that callbacks are deleted when
  * the context is unloaded).
- * 
+ *
  * This context does not maintain any record of incoming or
  * outgoing messages; these should be taken care of by other
  * scripts.
@@ -36,27 +36,49 @@
  * Otherwise, for the whole of its life (while the connection in
  * active) it will not re-render, so the functions will maintain
  * the same scope until the connection is closed.
- * 
+ *
  * USAGE
  * ---
  * Call treatMessageListener() from a different script, to register
- * functions in that different script to receive messages which 
+ * functions in that different script to receive messages which
  * have a given subject, sender_id or recipient_id.
- * 
- * As a rule, every message that is received will have a 
+ *
+ * As a rule, every message that is received will have a
  * recipients array that contains only the state variable `userId`.
  * The only exception is for the very first message received after
  * the connection is opened. This will have the sender_id "SYSTEM"
  * and the subject "CONNECTION". At this point, userId will not yet
  * have been set, so it is set to the recipients[0] of the incoming
  * message.
- * 
+ *
  * As a result, registering messages with recipient_id set to the
  * value for recipients[0] in any preceding message will ensure
  * that all subsequent messages are sent to the registering
  * function.
+ *
+ * trackMessage() and uNiQiD
+ * -------------------------
+ * If a given message expects a single response, you can use
+ * trackMessage() instead of sendMessage(). This will add a uNiQiD
+ * property to the outgoing message, and will assume that the
+ * backend will echo the same uNiQiD value.
+ *
+ * Usage:
+ *
+ *   trackMessage({ my: "message" }, callback )
+ *
+ *   function callback(response) {
+ *     // Treat response to { my: "message" }
+ *   }
+ *
+ * WARNING: This technique WILL FAIL if the backend omits the
+ * uNiQiD property.
+ *
+ * This technique is not appropriate for messages that are
+ * forwarded to other connected users, or for broadcasting to
+ * groups. Message listeners are the only way to handle
+ * unexpected messages.
  */
-
 
 
 import {
@@ -66,16 +88,18 @@ import {
   useRef
 } from 'react'
 
+
+const WS = import.meta.env.VITE_WS
 const HOSTNAME = import.meta.env.VITE_HOSTNAME
 const PORT = import.meta.env.VITE_PORT
 
 // Determine the URL to use for WebSocket
-const SOCKET_URL = `ws://${HOSTNAME}:${PORT}` // no trailing slash
+const SOCKET_URL = `${WS}${HOSTNAME}${PORT}` // no trailing slash
+const TIMEOUT = 30000 * 40 // set to 30 seconds for production
 
 
 export const WSContext = createContext()
 
-let renders = 0
 
 export const WSProvider = ({ children }) => {
 
@@ -84,8 +108,6 @@ export const WSProvider = ({ children }) => {
   const [ socketError, setSocketError ] = useState("")
   const [ userIdSet, setUserIdSet ] = useState(false)
   const [ user_name, setUserName ] = useState("")
-  
-  
 
   const socketRef = useRef()
   const userRef = useRef()
@@ -94,15 +116,15 @@ export const WSProvider = ({ children }) => {
     sender_id:    {},
     recipient_id: {}
   })
+  const trackerRef = useRef(new Map())
 
-  console.log("render:", ++renders, ", socketRequested:", socketRequested)
 
   // SOCKET MANAGEMENT // SOCKET MANAGEMENT // SOCKET MANAGEMENT //
 
   const requestSocket = () => {
     setSocketRequested(true)
 
-    return socketIsOpen
+    return socketIsOpen // initially false; set in socketOpened()
   }
 
 
@@ -114,7 +136,7 @@ export const WSProvider = ({ children }) => {
       return
     }
 
-    console.log("openSocket userRef.current:", userRef.current)
+    // console.log("openSocket userRef.current:", userRef.current)
 
     const socket = new WebSocket(SOCKET_URL)
     // console.log("openSocket")
@@ -128,7 +150,7 @@ export const WSProvider = ({ children }) => {
   }
 
 
-  const socketOpened = event => {
+  const socketOpened = () => {
     // console.log("SOCKET OPENED")
     setSocketIsOpen(true)
     setSocketError("")
@@ -168,6 +190,12 @@ export const WSProvider = ({ children }) => {
     socketRef.current = null
 
     console.log("socketClosed:", socketClosed, { socketIsOpen, socketError, socketRequested })
+
+    const message = {
+      sender_id: "SYSTEM",
+      subject: "SOCKET_CLOSED",
+    }
+    treatIncoming(message)
   }
 
 
@@ -218,11 +246,25 @@ export const WSProvider = ({ children }) => {
                              || (listenerMap[value] = new Set())
               listeners[action](callback)
 
+              // console.log("listeners:", key, value, listeners)
+
               treated += 1
             }
           })
 
           if (treated) {
+            // const replacer = (key, value) => {
+            //   if (value && !!(value.has && value.add && value.delete)) {
+            //     value = Array.from(value)
+            //       .map(callback => callback?.name)
+            //   }
+
+            //   return value
+            // }
+
+            // console.log("\n\n", action, JSON.stringify(listenersRef.current, replacer, '  '));
+
+
             return 0 // no error
 
           // Error treatment from here on...
@@ -259,16 +301,27 @@ export const WSProvider = ({ children }) => {
     // console.log(`** INCOMING **
     // ${JSON.stringify(message, null, 2)}`)
 
+   // Treat messages with a sender_id (like "SYSTEM") first
+    let listeners
+    let heardBy = 0
+    let handled = false
+
+    const { uNiQiD } = message
+    if (uNiQiD) {
+      // There's a registered callback for this message. Use that
+      // _instead of_ any message listeners.
+      handled = trackCallback(uNiQiD, message)
+      if (handled) {
+        return
+      }
+    }
+
     // The same message is normally handled only once, either for
     // its sender_id (such as "SYSTEM") or for its subject.
     // However this method can handle calls to multiple listeners
     // for the same message, but warns later listeners if th
     // message has already been handled.
 
-    // Treat messages with a sender_id (like "SYSTEM") first
-    let listeners
-    let handled = false
-    let heardBy = 0
 
     const allListeners = listenersRef.current
     const keys = Object.keys(allListeners)
@@ -278,39 +331,47 @@ export const WSProvider = ({ children }) => {
         allListeners[key][message[key]] || []
       )
 
-      handled = listeners.some( listener => (
-        listener( message, handled )
+      listeners.forEach( listener => (
+        handled = listener( message, handled ) || handled
         // later listeners may choose to ignore a message that has
         // already been handled
-      )) || handled
+      ))
 
       heardBy += listeners.length
     })
 
     if (!heardBy) {
-      console.log("Unhandled message:", message);
+      console.log("Unhandled message:", JSON.stringify(message, null, 2));
     }
+  }
+
+
+  function trackCallback(uNiQiD, message) {
+    const callback = trackerRef.current.get(uNiQiD)
+    if (callback) {
+      callback(message)
+      trackerRef.current.delete(uNiQiD)
+      return true
+    }
+    // If the callback timed out, then the regular message listener
+    // system will still have a chance to react.
   }
 
 
   // INCOMING MESSAGES // INCOMING MESSAGES // INCOMING MESSAGES //
 
-  const systemConnection = message => {
+  function systemConnection(message) {
     userRef.current = message.recipient_id
     setUserIdSet(true) // force re-render
+    // console.log("USER SOCKET_ID:", message.recipient_id)
 
     return true
   }
 
 
-  const systemLogin = message => {
+  function systemLogin (message) {
     const { user_name } = message
     setUserName(user_name)
-
-    // dispatch({
-    //   type: "SET_USER_NAME",
-    //   payload: user_name
-    // })
   }
 
 
@@ -328,7 +389,9 @@ export const WSProvider = ({ children }) => {
 
     treatMessageListener("add", listeners)
 
-    return () => treatMessageListener("delete", listeners)
+    return () => {
+      treatMessageListener("delete", listeners)
+    }
   }
 
 
@@ -355,6 +418,42 @@ export const WSProvider = ({ children }) => {
     }
 
     socket.send(message)
+
+    return true
+  }
+
+
+  function trackMessage(message, callback) {
+    if (typeof callback !== "function") { return }
+    // Assume that the message has a format that sendMessage can
+    // handle.
+
+    // Create a unique id with a name that is unlikely to be
+    // used anywhere else in this app.
+    const tracker = trackerRef.current
+    const uNiQiD = message.uNiQiD = crypto.randomUUID()
+
+    const sent = sendMessage(message)
+
+    if (sent) {
+      // Wait about 30 seconds before giving up on ever receiving
+      // a response, then clear the callback –> garbage collection
+      // If a response does come after that time, it will be
+      // ignored.
+      const timeout = setTimeout(() => {
+        tracker.delete(uNiQiD)
+        callback({ error: "Timeout", i18n: "login.timeout" })
+      }, TIMEOUT)
+
+      // Save the callback to be used when an incoming message
+      // echoes the given uNiQiD.
+      tracker.set(uNiQiD, (response) => {
+        clearTimeout(timeout)
+        callback(response)
+      })
+    }
+
+    return sent
   }
 
 
@@ -362,7 +461,6 @@ export const WSProvider = ({ children }) => {
 
   useEffect(registerConnectionCallback, [])
   useEffect(openSocket, [socketRequested])
-
 
 
   return (
@@ -374,10 +472,18 @@ export const WSProvider = ({ children }) => {
         socketError,
         requestSocket,
         treatMessageListener,
-        sendMessage
+        sendMessage,
+        trackMessage
       }}
     >
       {children}
     </WSContext.Provider>
   )
+}
+
+
+export default {
+  label: "WS",
+  Context: WSContext,
+  Provider: WSProvider
 }
