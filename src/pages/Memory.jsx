@@ -12,6 +12,7 @@
 
 
 import { useState, useEffect, useContext } from 'react'
+import { WSContext } from '../state/WSContext'
 import { GameContext } from '../state/GameContext'
 import '../css/memory.css'
 
@@ -20,6 +21,7 @@ const FOUND_DELAY = 1000
 
 
 export default function Memory() {
+  const { user_name } = useContext(WSContext)
   const { json } = useContext(GameContext) // initially {}
 
   const [ cards, setCards ] = useState([])
@@ -33,6 +35,8 @@ export default function Memory() {
 
 
   const flipCard = ({ target }) => {
+    if (players[player].name !== user_name) { return }
+
     target = target.closest("div") // target may initially be img
     const index = Number(target.dataset.index)
 
@@ -187,9 +191,21 @@ export default function Memory() {
   }
 
 
+  const enablePlayer = () => {
+    if (!players.length) { return }
+
+    const custom = (players[player].name === user_name)
+      ? "all"
+      : "none"
+
+    document.documentElement.style.setProperty("--events", custom)
+  }
+
+
   useEffect(startGame, [json.players])
   useEffect(nextTurn, [turnOver])
   useEffect(allFound, [toFind])
+  useEffect(enablePlayer, [player])
 
 
   return (

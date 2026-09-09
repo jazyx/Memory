@@ -1,8 +1,16 @@
+:root {
+  /* Prevent non-player from clicking */
+  --events: none;
+}
+
 #memory {
   --gap: 0.5vmin;
   --size: 21vmin;
   --edge: calc(var(--size) / 10);
   --square: calc(4 * (var(--size) + 2 * var(--gap)));
+  --dim: #933;
+
+  pointer-events: var(--events);
 
   .score {
     display: flex;
@@ -36,7 +44,7 @@
       width: var(--size);
       height: var(--size);
       margin: var(--gap);
-      color: #333;
+      color: var(--dim);
       background-color: #000;
       border-radius: var(--edge);
       overflow: hidden;
