@@ -65,6 +65,7 @@ export const GameProvider = ({ children }) => {
     treatMessageListener("add", listeners)
       
     return (() => {
+      console.log("Cleaning up listenForNewGame")
       treatMessageListener("delete", listeners)
     })
   }
