@@ -101,6 +101,11 @@ const SOCKET_URL = dev
   : WSS
 const TIMEOUT = 30000 // * 40 // set to 30 seconds for production
 
+// Attempt to reopen connection at increasingly longer delays
+const MIN_DELAY = 250
+const MAX_DELAY = 32000 // after 7 attempts
+let reopen_delay = MIN_DELAY
+
 // console.log("SOCKET_URL:", SOCKET_URL)
 
 export const WSContext = createContext()
@@ -155,6 +160,21 @@ export const WSProvider = ({ children }) => {
   }
 
 
+  const reopenSocket = () => {
+    reopen_delay = MIN_DELAY
+    setTimeout(retrySocket, reopen_delay)
+  }
+
+
+  const retrySocket = () => {
+    if (!socketRef.current) {
+      openSocket()
+      reopen_delay = Math.min(MAX_DELAY, reopen_delay * 2)
+      setTimeout(retrySocket, reopen_delay)
+    }
+  }
+
+
   const socketOpened = () => {
     // console.log("SOCKET OPENED")
     setSocketIsOpen(true)
@@ -186,21 +206,24 @@ export const WSProvider = ({ children }) => {
 
   const socketClosed = ({ wasClean }) => {
     const error = wasClean
-      ? ""
+      ? "SOCKET CLOSED"
       : "ERROR: Server is not responding."
 
-    setSocketError(error)
-    setSocketIsOpen(false)
-    setSocketRequested(false)
+    alert(error)
+
+    // setSocketError(error)
+    // setSocketIsOpen(false)
+    // setSocketRequested(false)
     socketRef.current = null
+    reopenSocket()
 
-    console.log("socketClosed:", socketClosed, { socketIsOpen, socketError, socketRequested })
+    // console.log("socketClosed:", socketClosed, { socketIsOpen, socketError, socketRequested })
 
-    const message = {
-      sender_id: "SYSTEM",
-      subject: "SOCKET_CLOSED",
-    }
-    treatIncoming(message)
+    // const message = {
+    //   sender_id: "SYSTEM",
+    //   subject: "SOCKET_CLOSED",
+    // }
+    // treatIncoming(message)
   }
 
 
