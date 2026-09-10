@@ -1,10 +1,10 @@
 /**
  * src/pages/Frame.jsx
- * 
+ *
  * <Frame> is mounted by default. This initializes a WebSocket
  * connection, so the component in Outlet should have access to
  * WSContext.userId after the connection opens.
- * 
+ *
  * The component displayed in Outlet will depend on the connection
  * and logged-in state.
  */
@@ -25,7 +25,9 @@ export default function Frame() {
   } = useContext(WSContext)
 
 
-  function openWS(param) {  
+  function openWS() {
+    console.log("** openWS **:", socketIsOpen)
+
     if (!socketIsOpen) {
       requestSocket()
     }

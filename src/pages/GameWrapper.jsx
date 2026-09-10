@@ -25,8 +25,6 @@ export default function GameWrapper() {
   // HACK to set role = "teacher" if name param has format
   // someName—teacher
   const { name: label } = useParams()
-  const { memory, name } = useParams()
-  console.log({ memory, name })
 
   const [ Activity, setActivity ] = useState(() => Throbber)
 
@@ -38,7 +36,7 @@ export default function GameWrapper() {
 
 
   const params = (label || "").split("+")
-  const [namer, teacher] = params
+  const [name, teacher] = params
   const role = teacher === "teacher" ? "teacher" : ""
 
 

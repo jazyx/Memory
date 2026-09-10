@@ -1,0 +1,518 @@
+/**
+ * frontend/src/state/WSREContext.js
+ *
+ * This context provides access to a WebSocket connection. It
+ * allows other scripts to add and remove listeners for particular
+ * messages, and to send messages in object format.
+ *
+ * The socket will not be opened until it is requested by another
+ * script. Even so, the socket is only opened after a re-render, to
+ * ensure that registerConnectionCallback() is called before the
+ * socket is opened (and to ensure that callbacks are deleted when
+ * the context is unloaded).
+ *
+ * This context does not maintain any record of incoming or
+ * outgoing messages; these should be taken care of by other
+ * scripts.
+ *
+ * This provider will re-render when:
+ *
+ * + a request to open the socket is received
+ * + the socket is opened, and immediately after when...
+ * + the WebSocket server responds to a connection request with a
+ *   message that has "CONNECTION" as the subject. At this point
+ *   user_id will be set to a unique user id.
+ * + the socket is closed
+ *
+ * In development mode, this provider will be re-rendered twice at
+ * each of the stages mentioned above, in order to check for
+ * unexpected side effects.
+ *
+ * If the app is edited during development, this provider will
+ * also be re-rendered, which will lead to treatMessageListener()
+ * being called multiple times. SOLUTION: Reload the app in the
+ * browser before testing the updated app.
+ *
+ * Otherwise, for the whole of its life (while the connection in
+ * active) it will not re-render, so the functions will maintain
+ * the same scope until the connection is closed.
+ *
+ * USAGE
+ * ---
+ * Call treatMessageListener() from a different script, to register
+ * functions in that different script to receive messages which
+ * have a given subject, sender_id or recipient_id.
+ *
+ * As a rule, every message that is received will have a
+ * recipients array that contains only the state variable `userId`.
+ * The only exception is for the very first message received after
+ * the connection is opened. This will have the sender_id "SYSTEM"
+ * and the subject "CONNECTION". At this point, userId will not yet
+ * have been set, so it is set to the recipients[0] of the incoming
+ * message.
+ *
+ * As a result, registering messages with recipient_id set to the
+ * value for recipients[0] in any preceding message will ensure
+ * that all subsequent messages are sent to the registering
+ * function.
+ *
+ * trackMessage() and uNiQiD
+ * -------------------------
+ * If a given message expects a single response, you can use
+ * trackMessage() instead of sendMessage(). This will add a uNiQiD
+ * property to the outgoing message, and will assume that the
+ * backend will echo the same uNiQiD value.
+ *
+ * Usage:
+ *
+ *   trackMessage({ my: "message" }, callback )
+ *
+ *   function callback(response) {
+ *     // Treat response to { my: "message" }
+ *   }
+ *
+ * WARNING: This technique WILL FAIL if the backend omits the
+ * uNiQiD property.
+ *
+ * This technique is not appropriate for messages that are
+ * forwarded to other connected users, or for broadcasting to
+ * groups. Message listeners are the only way to handle
+ * unexpected messages.
+ */
+
+
+import {
+  createContext,
+  useEffect,
+  useState,
+  useRef
+} from 'react'
+
+
+const dev = /^localhost:517\d$/.test(window.location.host)
+const WS = import.meta.env.VITE_WS
+const WSS = import.meta.env.VITE_WSS
+const HOSTNAME = import.meta.env.VITE_HOSTNAME
+const PORT = import.meta.env.VITE_PORT
+
+// Determine the URL to use for WebSocket
+const SOCKET_URL = dev
+  ? `${WS}${HOSTNAME}${PORT}` // no trailing slash
+  : WSS
+const TIMEOUT = 30000 // * 40 // set to 30 seconds for production
+
+// console.log("SOCKET_URL:", SOCKET_URL)
+
+export const WSContext = createContext()
+
+
+const MIN_DELAY = 250
+const MAX_DELAY = 32000 // after 7 attempts
+let reconnect_delay
+let reconnect_timer
+
+
+export const WSProvider = ({ children }) => {
+
+  const [ socketRequested, setSocketRequested ] = useState(false)
+  const [ socketIsOpen, setSocketIsOpen ] = useState(false)
+  const [ socketError, setSocketError ] = useState("")
+  const [ userIdSet, setUserIdSet ] = useState(false)
+  const [ user_name, setUserName ] = useState("")
+
+  const socketRef = useRef()
+  const userRef = useRef()
+  const listenersRef = useRef({
+    subject:      {},
+    sender_id:    {},
+    recipient_id: {}
+  })
+  const trackerRef = useRef(new Map())
+
+
+  // SOCKET MANAGEMENT // SOCKET MANAGEMENT // SOCKET MANAGEMENT //
+
+  const requestSocket = () => {
+    setSocketRequested(true)
+
+    return socketIsOpen // initially false; set in socketOpened()
+  }
+
+
+  const openSocket = () => {
+    if (!socketRequested) { // wait for a request
+      return
+
+    } else if (socketRef.current) { // don't open a socket twice
+      return
+    }
+
+    // console.log("openSocket userRef.current:", userRef.current)
+
+    const socket = new WebSocket(SOCKET_URL)
+    // console.log("openSocket")
+
+    socket.onopen = socketOpened
+    socket.onerror = socketFail
+    socket.onmessage = socketMessage
+    socket.onclose = socketClosed
+
+    socketRef.current = socket
+  }
+
+
+  const socketOpened = () => {
+    // console.log("SOCKET OPENED")
+    setSocketIsOpen(true)
+    setSocketError("")
+
+    reconnect_delay = MIN_DELAY
+  }
+
+
+  const socketFail = error => {
+    console.error("WSContext SOCKET ERROR\n", error)
+    setSocketError(error)
+    setSocketIsOpen(false)
+    setSocketRequested(false)
+  }
+
+
+  const socketMessage = ({data}) => {
+    try {
+      const json = JSON.parse(data)
+      data = json
+
+    } catch (error) {
+      // Leave data as it is? Drop it silently?
+      return console.warn("Invalid WS message:", data)
+    }
+
+    treatIncoming(data)
+  }
+
+
+  const socketClosed = ({ code, wasClean, reason }) => {
+    const error = wasClean
+      ? ""
+      : `ERROR: Server is not responding.
+      code:     ${code}
+      wasClean: ${wasClean}
+      reason:   ${reason}`
+
+    console.log("error:", error)
+    console.log("socketRef.current:", socketRef.current)
+
+    if (!wasClean) {
+      socketRef.current = null // immediate
+
+      const delay = reconnect_delay
+      reconnect_delay = Math.min(
+        MAX_DELAY, reconnect_delay * 2
+      )
+      reconnect_timer = setTimeout(openSocket, delay)
+    }
+
+    // setSocketError(error)
+    // setSocketIsOpen(false)
+    // setSocketRequested(false)
+    // socketRef.current = null
+
+    // console.log("socketClosed:", socketClosed, { socketIsOpen, socketError, socketRequested })
+
+    // const message = {
+    //   sender_id: "SYSTEM",
+    //   subject: "SOCKET_CLOSED",
+    // }
+    // treatIncoming(message)
+  }
+
+
+  // MESSAGE MANAGEMENT // MESSAGES // MESSAGE MANAGEMENT //
+
+  const treatMessageListener = (action, listener) => {
+    // Prepare for the worst
+    const error = {
+      message: `ERROR from treatMessageListener`,
+      action,
+      listener
+    }
+
+    if (action === "add" || action === "delete") {
+      // Only allow actions which match Set methods
+
+      if (Array.isArray(listener)) {
+        // Treat an array of listeners one by one
+        const errors = []
+        const error = listener.forEach( listener => {
+          treatMessageListener(action, listener)
+        })
+        errors.push(error)
+
+        if (errors.find( error => isNaN(error))) { // object found
+          return errors
+        }
+
+        return 0 // no error: all listeners successfully treated
+      }
+
+      // Check that listener is valid, with expected fields
+      if (typeof listener === "object") {
+        const { callback } = listener
+
+        if (callback instanceof Function) {
+          // Register the listener with each key that is provided
+          let treated = 0
+          const messageListeners = listenersRef.current
+          const keys = Object.keys(messageListeners)
+          // [ "subject", "sender_id", "recipient_id" ]
+
+          keys.forEach( key => {
+            const value = listener[key]
+            if (value) {
+              const listenerMap = messageListeners[key]
+              const listeners = listenerMap[value]
+                             || (listenerMap[value] = new Set())
+              listeners[action](callback)
+
+              // console.log("listeners:", key, value, listeners)
+
+              treated += 1
+            }
+          })
+
+          if (treated) {
+            // const replacer = (key, value) => {
+            //   if (value && !!(value.has && value.add && value.delete)) {
+            //     value = Array.from(value)
+            //       .map(callback => callback?.name)
+            //   }
+
+            //   return value
+            // }
+
+            // console.log("\n\n", action, JSON.stringify(listenersRef.current, replacer, '  '));
+
+
+            return 0 // no error
+
+          // Error treatment from here on...
+
+          } else {
+            error.reason = "listener object must provide at least one of 'subject', 'sender_id' or 'recipient_id'"
+          }
+        } else {
+          error.reason = "listener.callback must be a function"
+        }
+      } else {
+        error.reason = "listener argument must be an object"
+      }
+    } else {
+      error.reason = "action must be 'add' or 'delete'"
+    }
+
+    // Log errors elegantly
+    const replacer = (key, value) => {
+      if (typeof value === "function") {
+        return `function ${value.name}()`
+      }
+
+      return value
+    }
+
+    console.log(JSON.stringify(error, replacer, '  '))
+
+    return error
+  }
+
+
+  const treatIncoming = (message) => {
+    // console.log(`** INCOMING **
+    // ${JSON.stringify(message, null, 2)}`)
+
+   // Treat messages with a sender_id (like "SYSTEM") first
+    let listeners
+    let heardBy = 0
+    let handled = false
+
+    const { uNiQiD } = message
+    if (uNiQiD) {
+      // There's a registered callback for this message. Use that
+      // _instead of_ any message listeners.
+      handled = trackCallback(uNiQiD, message)
+      if (handled) {
+        return
+      }
+    }
+
+    // The same message is normally handled only once, either for
+    // its sender_id (such as "SYSTEM") or for its subject.
+    // However this method can handle calls to multiple listeners
+    // for the same message, but warns later listeners if th
+    // message has already been handled.
+
+
+    const allListeners = listenersRef.current
+    const keys = Object.keys(allListeners)
+    // [ "subject", "sender_id", "recipient_id" ]
+    keys.forEach( key => {
+      listeners = Array.from(
+        allListeners[key][message[key]] || []
+      )
+
+      listeners.forEach( listener => (
+        handled = listener( message, handled ) || handled
+        // later listeners may choose to ignore a message that has
+        // already been handled
+      ))
+
+      heardBy += listeners.length
+    })
+
+    if (!heardBy) {
+      console.log("Unhandled message:", JSON.stringify(message, null, 2));
+    }
+  }
+
+
+  function trackCallback(uNiQiD, message) {
+    const callback = trackerRef.current.get(uNiQiD)
+    if (callback) {
+      callback(message)
+      trackerRef.current.delete(uNiQiD)
+      return true
+    }
+    // If the callback timed out, then the regular message listener
+    // system will still have a chance to react.
+  }
+
+
+  // INCOMING MESSAGES // INCOMING MESSAGES // INCOMING MESSAGES //
+
+  function systemConnection(message) {
+    userRef.current = message.recipient_id
+    setUserIdSet(true) // force re-render
+    // console.log("USER SOCKET_ID:", message.recipient_id)
+
+    return true
+  }
+
+
+  function systemLogin (message) {
+    const { user_name } = message
+    setUserName(user_name)
+  }
+
+
+  const registerConnectionCallback = () => {
+    const listeners = [
+      {
+        subject: "CONNECTION",
+        callback: systemConnection
+      },
+      {
+        subject: "LOGGED_IN",
+        callback: systemLogin
+      }
+    ]
+
+    treatMessageListener("add", listeners)
+
+    return () => {
+      treatMessageListener("delete", listeners)
+    }
+  }
+
+
+  // OUTGOING MESSAGES // OUTGOING MESSAGES // OUTGOING MESSAGES //
+
+  function sendMessage(message) {
+    if (typeof message !== "object") { return }
+    // Server cannot treat a message that does not have a subject
+    // or a recipient_id key/value pair.
+
+    message.sender_id = userRef.current
+    // console.log("Sending message:", message)
+
+    message = JSON.stringify(message)
+    const socket = socketRef.current
+
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      console.warn(
+        "WebSocket FAILED TO SEND MESSAGE\n",
+        message,
+        "state:", socket?.readyState
+      )
+      return
+    }
+
+    socket.send(message)
+
+    return true
+  }
+
+
+  function trackMessage(message, callback) {
+    if (typeof callback !== "function") { return }
+    // Assume that the message has a format that sendMessage can
+    // handle.
+
+    // Create a unique id with a name that is unlikely to be
+    // used anywhere else in this app.
+    const tracker = trackerRef.current
+    const uNiQiD = message.uNiQiD = crypto.randomUUID()
+
+    const sent = sendMessage(message)
+
+    if (sent) {
+      // Wait about 30 seconds before giving up on ever receiving
+      // a response, then clear the callback –> garbage collection
+      // If a response does come after that time, it will be
+      // ignored.
+      const timeout = setTimeout(() => {
+        tracker.delete(uNiQiD)
+        callback({ error: "Timeout", i18n: "login.timeout" })
+      }, TIMEOUT)
+
+      // Save the callback to be used when an incoming message
+      // echoes the given uNiQiD.
+      tracker.set(uNiQiD, (response) => {
+        clearTimeout(timeout)
+        callback(response)
+      })
+    }
+
+    return sent
+  }
+
+
+  // USEEFFECT //
+
+  useEffect(registerConnectionCallback, [])
+  useEffect(openSocket, [socketRequested])
+
+
+  return (
+    <WSContext.Provider
+      value ={{
+        userId: userRef.current, // updated after re-render
+        user_name,
+        socketIsOpen,
+        socketError,
+        requestSocket,
+        treatMessageListener,
+        sendMessage,
+        trackMessage
+      }}
+    >
+      {children}
+    </WSContext.Provider>
+  )
+}
+
+
+export default {
+  label: "WS",
+  Context: WSContext,
+  Provider: WSProvider
+}

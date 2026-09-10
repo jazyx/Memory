@@ -35,7 +35,7 @@ export default function LogIn({ name }) {
   const loginWith = userName => {
     const message = {
       subject: "LOGIN",
-      user_name: userName
+      user_name: userName.trim()
     }
 
     sendMessage(message)
