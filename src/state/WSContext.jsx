@@ -187,6 +187,8 @@ export const WSProvider = ({ children }) => {
     setSocketError(error)
     setSocketIsOpen(false)
     setSocketRequested(false)
+
+    socket.close()
   }
 
 
