@@ -176,7 +176,7 @@ export const WSProvider = ({ children }) => {
 
 
   const socketOpened = () => {
-    // console.log("SOCKET OPENED")
+    console.log("SOCKET OPENED")
     setSocketIsOpen(true)
     setSocketError("")
   }
@@ -211,7 +211,7 @@ export const WSProvider = ({ children }) => {
       ? "SOCKET CLOSED"
       : "ERROR: Server is not responding."
 
-    alert(error)
+    console.warn(error)
 
     // setSocketError(error)
     // setSocketIsOpen(false)
