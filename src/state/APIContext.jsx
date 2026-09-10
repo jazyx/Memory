@@ -10,7 +10,7 @@ const SERVER = import.meta.env.VITE_SERVER
 const dev = /^localhost:517\d$/.test(window.location.host)
 const origin = dev ? ORIGIN : SERVER
 
-console.log("origin:", origin)
+// console.log("origin:", origin)
 
 
 export const APIContext = createContext()

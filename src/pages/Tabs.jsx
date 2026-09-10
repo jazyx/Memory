@@ -22,7 +22,7 @@ export default function Tabs() {
   }
 
 
-  const display = (role)
+  const display = (true) // (role)
     ? <button
         onClick={newGame}
       >

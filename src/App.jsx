@@ -3,7 +3,7 @@
  */
  
 import {
-  BrowserRouter as Router,
+  HashRouter as Router,
   Routes,
   Route
 } from 'react-router-dom'
@@ -25,11 +25,7 @@ function App() {
               element={<GameWrapper />}
             />
             <Route
-              path="/:memory/:name/"
-              element={<GameWrapper />}
-            />
-            <Route
-              path="/:memory"
+              path="/:name"
               element={<GameWrapper />}
             />
           </Route>

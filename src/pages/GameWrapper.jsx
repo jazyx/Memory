@@ -1,6 +1,6 @@
 /**
  * frontend/src/pages/GameWrapper.jsx
- * 
+ *
  * This component is always shown in the Outlet slot. What it
  * displays will depend on:
  * + A successful connection to the WebSocket server, meaning that
@@ -25,9 +25,11 @@ export default function GameWrapper() {
   // HACK to set role = "teacher" if name param has format
   // someName—teacher
   const { name: label } = useParams()
+  const { memory, name } = useParams()
+  console.log({ memory, name })
 
   const [ Activity, setActivity ] = useState(() => Throbber)
-  
+
   const {
     userId,
     user_name,
@@ -36,7 +38,7 @@ export default function GameWrapper() {
 
 
   const params = (label || "").split("+")
-  const [name, teacher] = params
+  const [namer, teacher] = params
   const role = teacher === "teacher" ? "teacher" : ""
 
 
