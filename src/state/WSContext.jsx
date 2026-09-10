@@ -129,6 +129,9 @@ export const WSProvider = ({ children }) => {
   const trackerRef = useRef(new Map())
 
 
+  console.log("WSContext user_name:", user_name)
+
+
   // SOCKET MANAGEMENT // SOCKET MANAGEMENT // SOCKET MANAGEMENT //
 
   const requestSocket = () => {
