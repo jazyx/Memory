@@ -402,6 +402,7 @@ export const WSProvider = ({ children }) => {
   function systemLogin (message) {
     const { user_name } = message
     setUserName(user_name)
+    console.log("Logged in as :", user_name )
   }
 
 
