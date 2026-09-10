@@ -26,6 +26,9 @@ export const GameProvider = ({ children }) => {
   } = useContext(WSContext)
   const [ json, setJSON ] = useState({})
   const [ role, setRole ] = useState()
+
+
+  console.log("GameContext user_name:", user_name)
   
 
   const confirmConnection = ({ recipient_id }) => {
