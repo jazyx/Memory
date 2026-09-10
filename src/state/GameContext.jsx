@@ -9,7 +9,8 @@ import {
   createContext,
   useContext,
   useState,
-  useEffect
+  useEffect,
+  useRef
 } from 'react'
 import { WSContext } from './WSContext'
 
@@ -26,6 +27,8 @@ export const GameProvider = ({ children }) => {
   } = useContext(WSContext)
   const [ json, setJSON ] = useState({})
   const [ role, setRole ] = useState()
+
+
 
 
   console.log("GameContext user_name:", user_name)
@@ -50,21 +53,24 @@ export const GameProvider = ({ children }) => {
 
 
   const listenForNewGame = () => {
-    treatMessageListener(
-      "add",
-      [
-        { subject: "CONNECTION",
-          callback: confirmConnection
-        },
-        { subject: "GAME_OBJECT",
-          callback: setGameObject
-        }
-      ]
-    )
+    const listeners = [
+      { subject: "CONNECTION",
+        callback: confirmConnection
+      },
+      { subject: "GAME_OBJECT",
+        callback: setGameObject
+      }
+    ]
+    
+    treatMessageListener("add", listeners)
+      
+    return (() => {
+      treatMessageListener("delete", listeners)
+    })
   }
 
 
-  useEffect(listenForNewGame, [])
+  useEffect(listenForNewGame, [userId, user_name])
 
 
   return (
