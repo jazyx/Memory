@@ -18,10 +18,26 @@ export const GameContext = createContext()
 
 
 export const GameProvider = ({ children }) => {
-  const { treatMessageListener } = useContext(WSContext)
+  const {
+    treatMessageListener,
+    userId,
+    user_name,
+    sendMessage
+  } = useContext(WSContext)
   const [ json, setJSON ] = useState({})
   const [ role, setRole ] = useState()
   
+
+  const confirmConnection = ({ recipient_id }) => {
+    console.log("confirmConnection:", userId, user_name)
+    if (recipient_id !== userId && user_name) {
+      console.log("Logging in again")
+      sendMessage({
+        subject: "LOGIN",
+        user_name
+      })
+    }
+  }
 
 
   const setGameObject = ({game_object}) => {
@@ -34,6 +50,9 @@ export const GameProvider = ({ children }) => {
     treatMessageListener(
       "add",
       [
+        { subject: "CONNECTION",
+          callback: confirmConnection
+        },
         { subject: "GAME_OBJECT",
           callback: setGameObject
         }
