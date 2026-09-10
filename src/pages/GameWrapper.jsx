@@ -35,7 +35,7 @@ export default function GameWrapper() {
   const { setRole } = useContext(GameContext)
 
 
-  const params = label.split("+")
+  const params = (label || "").split("+")
   const [name, teacher] = params
   const role = teacher === "teacher" ? "teacher" : ""
 

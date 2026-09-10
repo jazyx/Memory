@@ -89,14 +89,19 @@ import {
 } from 'react'
 
 
+const dev = /^localhost:517\d$/.test(window.location.host) 
 const WS = import.meta.env.VITE_WS
+const WSS = import.meta.env.VITE_WSS
 const HOSTNAME = import.meta.env.VITE_HOSTNAME
 const PORT = import.meta.env.VITE_PORT
 
 // Determine the URL to use for WebSocket
-const SOCKET_URL = `${WS}${HOSTNAME}${PORT}` // no trailing slash
-const TIMEOUT = 30000 * 40 // set to 30 seconds for production
+const SOCKET_URL = dev 
+  ? `${WS}${HOSTNAME}${PORT}` // no trailing slash
+  : WSS
+const TIMEOUT = 30000 // * 40 // set to 30 seconds for production
 
+console.log("SOCKET_URL:", SOCKET_URL)
 
 export const WSContext = createContext()
 
