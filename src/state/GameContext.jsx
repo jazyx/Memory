@@ -29,7 +29,7 @@ export const GameProvider = ({ children }) => {
   
 
   const confirmConnection = ({ recipient_id }) => {
-    console.log("confirmConnection:", userId, user_name)
+    console.log("confirmConnection - recipient_id:", recipient_id, ", userId:", userId, ", user_name:", user_name)
     if (recipient_id !== userId && user_name) {
       console.log("Logging in again")
       sendMessage({
