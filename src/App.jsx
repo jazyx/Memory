@@ -7,7 +7,7 @@ import {
   Routes,
   Route
 } from 'react-router-dom'
-import './css/App.css'
+import './css/app.css'
 import Frame from './pages/Frame'
 import GameWrapper from './pages/GameWrapper'
 import NotFound from './pages/NotFound'

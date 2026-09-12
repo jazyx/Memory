@@ -8,6 +8,10 @@
 import { APIProvider, APIContext } from './APIContext'
 import { WSProvider, WSContext } from'./WSContext'
 import { GameProvider, GameContext } from'./GameContext'
+import {
+  CarouselProvider,
+  CarouselContext
+} from'./CarouselContext'
 
 
 const Provider = ({ children }) => {
@@ -15,7 +19,9 @@ const Provider = ({ children }) => {
     <APIProvider>
       <WSProvider>
         <GameProvider>
-          {children}
+          <CarouselProvider>
+            {children}
+          </CarouselProvider>
         </GameProvider>
       </WSProvider>
     </APIProvider>
@@ -27,5 +33,6 @@ export {
   Provider,
   APIContext,
   WSContext,
-  GameContext
+  GameContext,
+  CarouselContext
 }

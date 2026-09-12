@@ -1,0 +1,21 @@
+:root {
+  --board: 20
+}
+
+#board {
+  --width: 1.2em;
+  --breadth: calc(var(--width) * var(--board));
+  display: flex;
+  flex-wrap: wrap;
+  width: var(--breadth);
+
+  span {
+    display: inline-block;
+    width: var(--width);
+    height: 1.5em;
+    line-height: 1.5em;
+    text-align: center;
+    border: 1px solid #888;
+    box-sizing: border-box;
+  }
+}

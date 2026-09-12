@@ -18,6 +18,8 @@ import { GameContext } from '../state/GameContext'
 import Throbber from '../components/Throbber'
 import LogIn from './LogIn'
 import Memory from './Memory'
+import Carousel from './Carousel'
+
 
 
 
@@ -46,7 +48,8 @@ export default function GameWrapper() {
     } else if (!user_name) {
       setActivity(() => LogIn)
     } else {
-      setActivity(() => Memory)
+      // setActivity(() => Memory)
+      setActivity(() => Carousel)
     }
   }
 
