@@ -26,10 +26,10 @@ export default function Frame() {
 
 
   function openWS() {
-    console.log("openWS() socketIsOpen:", socketIsOpen)
+    // console.log("openWS() socketIsOpen:", socketIsOpen)
 
     if (!socketIsOpen) {
-      console.log("Requesting socket...")
+      // console.log("Requesting socket...")
       requestSocket()
     }
   }

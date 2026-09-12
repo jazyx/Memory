@@ -41,16 +41,19 @@ const GENERATOR = {
     "hammer",
     "phone",
     "slide",
-    "sports carter",
+    "sports car",
     "tennis racket"
   ]
 }
 const WIDTH = 22 // "How many containers "
 const ROWS = 3
+const CHARSET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ.?-"
+
 
 
 export default function Board({ phrase, type, _1, _2 }) {
   const { previous } = useContext(CarouselContext)
+  console.log("previous:", previous)
 
   const source = GENERATOR[type]
   const first = source[_1]
@@ -107,13 +110,22 @@ export default function Board({ phrase, type, _1, _2 }) {
   }
 
 
-  const charDisplay = lettering.map((character, index) => (
-    <Character
-      key = {index+"_"+character}
-      previous={previous[index] || " "}
-      current={character}
-    />
-  ))
+  const charDisplay = lettering.map((character, index) => {
+    const start = Math.max(0, CHARSET.indexOf(previous[index]))
+    const end = CHARSET.indexOf(character) + 1 // less than start?
+    const sequence = (start < end)
+      ? CHARSET.slice(start, end)
+      : CHARSET.slice(start) + CHARSET.slice(0, end)
+
+    console.log("sequence:", sequence.replace(" ", "_"))
+
+    return (
+      <Character
+        key={index+"_"+character}
+        sequence={sequence}
+      />
+    )
+})
 
 
   function setBoardCSS() {

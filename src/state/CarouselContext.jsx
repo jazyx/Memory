@@ -12,7 +12,7 @@ export const CarouselContext = createContext()
 
 
 export const CarouselProvider = ({ children }) => {
-  const [ previous, setPrevious ] = useState("")
+  const [ previous, setPrevious ] = useState("HOW MANY THINGS ARE IN THE SUITCASE?")
 
   return (
     <CarouselContext.Provider

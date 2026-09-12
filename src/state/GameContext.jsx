@@ -31,13 +31,13 @@ export const GameProvider = ({ children }) => {
 
 
 
-  console.log("GameContext user_name:", user_name)
+  // console.log("GameContext user_name:", user_name)
   
 
   const confirmConnection = ({ recipient_id }) => {
-    console.log("confirmConnection - recipient_id:", recipient_id, ", userId:", userId, ", user_name:", user_name)
+    // console.log("confirmConnection - recipient_id:", recipient_id, ", userId:", userId, ", user_name:", user_name)
     if (recipient_id !== userId && user_name) {
-      console.log("Logging in again")
+      // console.log("Logging in again")
       sendMessage({
         subject: "LOGIN",
         user_name
@@ -65,7 +65,7 @@ export const GameProvider = ({ children }) => {
     treatMessageListener("add", listeners)
       
     return (() => {
-      console.log("Cleaning up listenForNewGame")
+      // console.log("Cleaning up listenForNewGame")
       treatMessageListener("delete", listeners)
     })
   }

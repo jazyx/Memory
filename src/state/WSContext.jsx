@@ -129,7 +129,7 @@ export const WSProvider = ({ children }) => {
   const trackerRef = useRef(new Map())
 
 
-  console.log("WSContext user_name:", user_name)
+  // console.log("WSContext user_name:", user_name)
 
 
   // SOCKET MANAGEMENT // SOCKET MANAGEMENT // SOCKET MANAGEMENT //
@@ -179,7 +179,7 @@ export const WSProvider = ({ children }) => {
 
 
   const socketOpened = () => {
-    console.log("SOCKET OPENED")
+    // console.log("SOCKET OPENED")
     setSocketIsOpen(true)
     setSocketError("")
   }
@@ -324,7 +324,7 @@ export const WSProvider = ({ children }) => {
       return value
     }
 
-    console.log(JSON.stringify(error, replacer, '  '))
+    // console.log(JSON.stringify(error, replacer, '  '))
 
     return error
   }
@@ -374,7 +374,7 @@ export const WSProvider = ({ children }) => {
     })
 
     if (!heardBy) {
-      console.log("Unhandled message:", JSON.stringify(message, null, 2));
+      // console.log("Unhandled message:", JSON.stringify(message, null, 2));
     }
   }
 
@@ -396,7 +396,7 @@ export const WSProvider = ({ children }) => {
   function systemConnection(message) {
     userRef.current = message.recipient_id
     setUserIdSet(true) // force re-render
-    console.log("USER SOCKET_ID:", message.recipient_id)
+    // console.log("USER SOCKET_ID:", message.recipient_id)
 
     return true
   }
@@ -405,7 +405,7 @@ export const WSProvider = ({ children }) => {
   function systemLogin (message) {
     const { user_name } = message
     setUserName(user_name)
-    console.log("Logged in as :", user_name )
+    // console.log("Logged in as :", user_name )
   }
 
 
