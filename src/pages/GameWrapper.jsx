@@ -48,8 +48,8 @@ export default function GameWrapper() {
     } else if (!user_name) {
       setActivity(() => LogIn)
     } else {
-      // setActivity(() => Memory)
-      setActivity(() => Carousel)
+      setActivity(() => Memory)
+      // setActivity(() => Carousel)
     }
   }
 

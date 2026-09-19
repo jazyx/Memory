@@ -27,7 +27,8 @@ export default function Memory({ role }) {
     user_name,
     sendMessage
   } = useContext(WSContext)
-  const { json } = useContext(GameContext) // initially {}
+  const { json, DEPOT } = useContext(GameContext)
+  // initially {}
 
   const [ cards, setCards ] = useState([])
   const [ players, setPlayers ] = useState([])
@@ -84,6 +85,7 @@ export default function Memory({ role }) {
 
 
   const layout = cards.map(({image, turned, found}, index) => {
+    image = DEPOT+image
     const name = image.replace(/^.+\//, "")
                     .replace(/\..+$/, "")
     const key = `${index}_${name}`

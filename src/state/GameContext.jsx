@@ -13,6 +13,7 @@ import {
   useRef
 } from 'react'
 import { WSContext } from './WSContext'
+import { APIContext } from './APIContext'
 
 
 export const GameContext = createContext()
@@ -25,6 +26,7 @@ export const GameProvider = ({ children }) => {
     user_name,
     sendMessage
   } = useContext(WSContext)
+  const { DEPOT } = useContext(APIContext)
   const [ json, setJSON ] = useState({})
   const [ role, setRole ] = useState()
 
@@ -49,6 +51,17 @@ export const GameProvider = ({ children }) => {
   const setGameObject = ({game_object}) => {
     setJSON(game_object)
     // console.log("game_object", JSON.stringify(game_object, null, '  '));
+  }
+
+
+  const preload = images => {
+    const imgs = []
+    images.forEach(({ image: src }) => {
+      const img = new Image()
+      img.src = DEPOT+src
+      imgs.push(img)
+    })
+    
   }
 
 
@@ -80,7 +93,8 @@ export const GameProvider = ({ children }) => {
         json,
         setJSON,
         role,
-        setRole
+        setRole,
+        DEPOT
       }}
     >
       {children}
